@@ -13,7 +13,7 @@ const ROLE_ROUTES = {
 };
 
 // Public routes that don't require authentication
-const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/'];
+const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/', '/_next', '/api'];
 
 // Routes that require authentication but no specific role
 const AUTH_ROUTES = ['/profile', '/settings'];

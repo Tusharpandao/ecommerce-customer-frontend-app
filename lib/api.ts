@@ -19,16 +19,19 @@ class ApiClient {
 
   constructor() {
     this.client = axios.create({
-      baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api',
-      withCredentials: true, // Include cookies for JWT
+      baseURL: process.env.NEXT_PUBLIC_API_URL,
+      withCredentials: false, // Don't use cookies for JWT
       headers: {
         'Content-Type': 'application/json',
       },
     });
 
-    // Request interceptor for CSRF token (placeholder)
+    // Request interceptor for JWT token
     this.client.interceptors.request.use((config) => {
-      // TODO: Add CSRF token when backend is ready
+      const token = this.getToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
       return config;
     });
 
@@ -37,12 +40,33 @@ class ApiClient {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          // Redirect to login on unauthorized
+          // Clear token and redirect to login on unauthorized
+          this.clearToken();
           window.location.href = '/login';
         }
         return Promise.reject(error);
       }
     );
+  }
+
+  // Token management methods
+  private getToken(): string | null {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('jwt_token');
+    }
+    return null;
+  }
+
+  private setToken(token: string): void {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('jwt_token', token);
+    }
+  }
+
+  private clearToken(): void {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('jwt_token');
+    }
   }
 
   // Generic request method
@@ -60,31 +84,52 @@ class ApiClient {
 
   // Authentication APIs
   async login(data: LoginRequest): Promise<ApiResponse<{ user: User; token: string }>> {
-    return this.request({
+    const response = await this.request<{ user: User; token: string }>({
       method: 'POST',
       url: '/auth/login',
       data,
     });
+    
+    // Store token on successful login
+    if (response.success && response.data?.token) {
+      this.setToken(response.data.token);
+    }
+    
+    return response;
   }
 
   async register(data: RegisterRequest): Promise<ApiResponse<{ user: User; token: string }>> {
-    return this.request({
+    const response = await this.request<{ user: User; token: string }>({
       method: 'POST',
       url: '/auth/register',
       data,
     });
+    
+    // Store token on successful registration
+    if (response.success && response.data?.token) {
+      this.setToken(response.data.token);
+    }
+    
+    return response;
   }
 
   async googleAuth(token: string): Promise<ApiResponse<{ user: User; token: string }>> {
-    return this.request({
+    const response = await this.request<{ user: User; token: string }>({
       method: 'POST',
       url: '/auth/google',
       data: { token },
     });
+    
+    // Store token on successful Google auth
+    if (response.success && response.data?.token) {
+      this.setToken(response.data.token);
+    }
+    
+    return response;
   }
 
   async forgotPassword(email: string): Promise<ApiResponse<{ message: string }>> {
-    return this.request({
+    return this.request<{ message: string }>({
       method: 'POST',
       url: '/auth/forgot-password',
       data: { email },
@@ -92,10 +137,15 @@ class ApiClient {
   }
 
   async logout(): Promise<ApiResponse<{ message: string }>> {
-    return this.request({
+    const response = await this.request<{ message: string }>({
       method: 'POST',
       url: '/auth/logout',
     });
+    
+    // Clear token on logout
+    this.clearToken();
+    
+    return response;
   }
 
   // Product APIs
@@ -248,13 +298,15 @@ class ApiClient {
     return this.request({
       method: 'PUT',
       url: `/users/${id}/block`,
+      data: { blocked: true },
     });
   }
 
   async unblockUser(id: string): Promise<ApiResponse<User>> {
     return this.request({
       method: 'PUT',
-      url: `/users/${id}/unblock`,
+      url: `/users/${id}/block`,
+      data: { blocked: false },
     });
   }
 

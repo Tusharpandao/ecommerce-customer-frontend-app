@@ -1,10 +1,12 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { apiClient } from '@/lib/api';
 import { Order, OrderStatus } from '@/lib/types';
 import { Package, Truck, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { useOrderUpdates } from '@/lib/useWebSocket';
 
 const getStatusIcon = (status: OrderStatus) => {
   switch (status) {
@@ -41,10 +43,21 @@ const getStatusColor = (status: OrderStatus) => {
 };
 
 export default function OrdersPage() {
+  const queryClient = useQueryClient();
   const { data: ordersResponse, isLoading, error } = useQuery({
     queryKey: ['customer-orders'],
     queryFn: () => apiClient.getOrders(1, 20),
     staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
+  // Listen for real-time order updates
+  useOrderUpdates((orderUpdate) => {
+    console.log('Order update received:', orderUpdate);
+    
+    // Invalidate and refetch orders to get the latest data
+    queryClient.invalidateQueries({ queryKey: ['customer-orders'] });
+    
+    // Show a toast notification (handled by the WebSocket service)
   });
 
   if (isLoading) {

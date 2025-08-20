@@ -28,31 +28,45 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
   useEffect(() => {
-    checkAuth();
-  }, []);
+    // Only check auth once on initial load
+    if (!hasCheckedAuth) {
+      checkAuth();
+    }
+  }, [hasCheckedAuth]);
 
   const checkAuth = async () => {
     try {
+      console.log('Checking authentication status...');
       const response = await apiClient.getCurrentUser();
       if (response.success && response.data) {
+        console.log('User authenticated:', response.data.email);
         setUser(response.data);
+      } else {
+        console.log('No authenticated user found');
+        setUser(null);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      console.log('Authentication check failed:', error);
+      setUser(null);
     } finally {
       setIsLoading(false);
+      setHasCheckedAuth(true);
     }
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      console.log('Attempting login for:', email);
       const response = await apiClient.login({ email, password });
       if (response.success && response.data) {
+        console.log('Login successful for:', email);
         setUser(response.data.user);
         return true;
       }
+      console.log('Login failed for:', email);
       return false;
     } catch (error) {
       console.error('Login failed:', error);
@@ -62,11 +76,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (data: any): Promise<boolean> => {
     try {
+      console.log('Attempting registration for:', data.email);
       const response = await apiClient.register(data);
       if (response.success && response.data) {
+        console.log('Registration successful for:', data.email);
         setUser(response.data.user);
         return true;
       }
+      console.log('Registration failed for:', data.email);
       return false;
     } catch (error) {
       console.error('Registration failed:', error);
@@ -76,6 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
+      console.log('Logging out user:', user?.email);
       await apiClient.logout();
       setUser(null);
       // Redirect to login page

@@ -16,7 +16,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     // TODO: Implement add to cart functionality
     // This would typically call an API endpoint to add the product to the user's cart
     setTimeout(() => {
-      setIsAddingToCart(false);
+      setIsAddingToCart(false);``
     }, 1000);
   };
 

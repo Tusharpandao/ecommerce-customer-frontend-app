@@ -1,8 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth';
 import { QueryProvider } from '@/lib/query-provider';
+import { WebSocketProvider } from '@/lib/websocket-provider';
 import { Toaster } from 'react-hot-toast';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -12,7 +13,11 @@ export const metadata: Metadata = {
   description: 'A modern, secure E-Commerce platform with role-based access control',
   keywords: ['ecommerce', 'shopping', 'online store', 'secure'],
   authors: [{ name: 'E-Commerce Team' }],
-  viewport: 'width=device-width, initial-scale=1',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -25,6 +30,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <QueryProvider>
           <AuthProvider>
+            <WebSocketProvider>
             {children}
             <Toaster 
               position="top-right"
@@ -36,6 +42,7 @@ export default function RootLayout({
                 },
               }}
             />
+            </WebSocketProvider>
           </AuthProvider>
         </QueryProvider>
       </body>
