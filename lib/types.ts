@@ -16,13 +16,23 @@ export interface Product {
   name: string;
   description: string;
   price: number;
+  salePrice: number;
+  costPrice?: number;
+  sku?: string;
+  barcode?: string;
+  weight?: number;
+  dimensions?: string;
   images: string[];
   category: Category;
   seller: User;
-  stock: number;
+  stockQuantity: number;
+  minStockLevel?: number;
+  maxStockLevel?: number;
+  thumbnail: string;
   rating: number;
   reviewCount: number;
   isActive: boolean;
+  isFeatured?: boolean;
   createdAt: string;
   updatedAt: string;
 }

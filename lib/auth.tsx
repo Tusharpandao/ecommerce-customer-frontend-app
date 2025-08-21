@@ -31,14 +31,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
   useEffect(() => {
-    // Only check auth once on initial load
+    let isMounted = true;
+    
+    // Only check auth once on initial load and only if there's a token
     if (!hasCheckedAuth) {
-      checkAuth();
+      const token = localStorage.getItem('jwt_token');
+      if (token) {
+        checkAuth().then(() => {
+          if (isMounted) {
+            setIsLoading(false);
+            setHasCheckedAuth(true);
+          }
+        });
+      } else {
+        // No token, user is not authenticated
+        if (isMounted) {
+          setIsLoading(false);
+          setHasCheckedAuth(true);
+        }
+      }
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [hasCheckedAuth]);
 
   const checkAuth = async () => {
     try {
+      // Double-check if token still exists before making the request
+      const token = localStorage.getItem('jwt_token');
+      if (!token) {
+        console.log('No token found, skipping auth check');
+        setUser(null);
+        return;
+      }
+
       console.log('Checking authentication status...');
       const response = await apiClient.getCurrentUser();
       if (response.success && response.data) {
@@ -51,9 +79,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.log('Authentication check failed:', error);
       setUser(null);
-    } finally {
-      setIsLoading(false);
-      setHasCheckedAuth(true);
     }
   };
 

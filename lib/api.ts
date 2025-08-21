@@ -40,9 +40,14 @@ class ApiClient {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          // Clear token and redirect to login on unauthorized
+          // Clear token on unauthorized
           this.clearToken();
-          window.location.href = '/login';
+          
+          // Only redirect to login if not already on login or register page
+          const currentPath = window.location.pathname;
+          if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
+            window.location.href = '/login';
+          }
         }
         return Promise.reject(error);
       }
@@ -73,6 +78,8 @@ class ApiClient {
   private async request<T>(config: any): Promise<ApiResponse<T>> {
     try {
       const response: AxiosResponse<ApiResponse<T>> = await this.client(config);
+      console.log("response", response);
+      console.log("response.data", response.data);
       return response.data;
     } catch (error: any) {
       return {
@@ -202,10 +209,29 @@ class ApiClient {
 
   // Category APIs
   async getCategories(): Promise<ApiResponse<Category[]>> {
-    return this.request({
-      method: 'GET',
-      url: '/categories',
-    });
+    try {
+      // First try the simple endpoint
+      const response = await this.request<Category[]>({
+        method: 'GET',
+        url: '/categories/simple',
+      });
+      
+      if (response.success) {
+        return response;
+      }
+      
+      // Fallback to the original endpoint
+      return this.request<Category[]>({
+        method: 'GET',
+        url: '/categories',
+      });
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      return {
+        success: false,
+        error: 'Failed to fetch categories',
+      };
+    }
   }
 
   async createCategory(data: { name: string; description?: string }): Promise<ApiResponse<Category>> {

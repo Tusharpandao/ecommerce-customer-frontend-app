@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Product } from '@/lib/types';
 import { Star, ShoppingCart } from 'lucide-react';
+import Image from 'next/image';
+import { apiClient } from '@/lib/api';
 
 interface ProductCardProps {
   product: Product;
@@ -13,11 +15,21 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const handleAddToCart = async () => {
     setIsAddingToCart(true);
-    // TODO: Implement add to cart functionality
-    // This would typically call an API endpoint to add the product to the user's cart
-    setTimeout(() => {
-      setIsAddingToCart(false);``
-    }, 1000);
+    try {
+      const response = await apiClient.addToCart(product.id, 1);
+      if (response.success) {
+        // You could add a toast notification here
+        console.log('Product added to cart successfully');
+      } else {
+        console.error('Failed to add product to cart:', response.error);
+        // You could add an error toast here
+      }
+    } catch (error) {
+      console.error('Error adding product to cart:', error);
+      // You could add an error toast here
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   const formatPrice = (price: number) => {
@@ -58,9 +70,11 @@ export default function ProductCard({ product }: ProductCardProps) {
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden">
-        <img
-          src={product.images[0] || '/placeholder-product.svg'}
+        <Image
+          src={product.thumbnail || '/placeholder-product.svg'}
           alt={product.name}
+          width={400}
+          height={400}
           className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
@@ -103,8 +117,8 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Stock Status */}
         <div className="text-sm text-gray-600 mb-3">
-          {product.stock > 0 ? (
-            <span className="text-green-600">In Stock ({product.stock})</span>
+          {product.stockQuantity > 0 ? (
+            <span className="text-green-600">In Stock ({product.stockQuantity})</span>
           ) : (
             <span className="text-red-600">Out of Stock</span>
           )}
@@ -113,9 +127,9 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Add to Cart Button */}
         <button
           onClick={handleAddToCart}
-          disabled={!product.isActive || product.stock === 0 || isAddingToCart}
+          disabled={!product.isActive || product.stockQuantity === 0 || isAddingToCart}
           className={`w-full flex items-center justify-center px-4 py-2 rounded-md font-medium transition-colors ${
-            !product.isActive || product.stock === 0
+            !product.isActive || product.stockQuantity === 0
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
           }`}
