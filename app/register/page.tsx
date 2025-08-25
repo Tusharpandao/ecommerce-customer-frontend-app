@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { Eye, EyeOff, Mail, Lock, User, Shield } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function RegisterPage() {
@@ -14,7 +14,7 @@ export default function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'customer' as 'customer' | 'seller' | 'admin',
+    role: 'CUSTOMER' as 'CUSTOMER',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -155,29 +155,6 @@ export default function RegisterPage() {
                   placeholder="Enter your email"
                 />
               </div>
-            </div>
-
-            {/* Role Selection */}
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                Account Type
-              </label>
-              <div className="mt-1">
-                <select
-                  id="role"
-                  name="role"
-                  value={formData.role}
-                  onChange={handleInputChange}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                  <option value="customer">Customer - Shop and buy products</option>
-                  <option value="seller">Seller - Sell your products</option>
-                  <option value="admin">Admin - Platform management</option>
-                </select>
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                Choose your account type. You can change this later.
-              </p>
             </div>
 
             {/* Password Field */}

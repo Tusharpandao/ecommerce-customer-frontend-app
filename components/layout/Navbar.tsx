@@ -10,10 +10,7 @@ import {
   LogOut, 
   Menu, 
   X,
-  Package,
-  BarChart3,
-  Users,
-  Settings
+  Package
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -28,21 +25,6 @@ export default function Navbar() {
     if (!user) return [];
 
     switch (user.role) {
-      case 'admin':
-        return [
-          { href: '/admin/dashboard', label: 'Dashboard', icon: BarChart3 },
-          { href: '/admin/products', label: 'Products', icon: Package },
-          { href: '/admin/users', label: 'Users', icon: Users },
-          { href: '/admin/orders', label: 'Orders', icon: Package },
-          { href: '/admin/categories', label: 'Categories', icon: Package },
-        ];
-      case 'seller':
-        return [
-          { href: '/seller/dashboard', label: 'Dashboard', icon: BarChart3 },
-          { href: '/seller/products', label: 'My Products', icon: Package },
-          { href: '/seller/add-product', label: 'Add Product', icon: Package },
-          { href: '/seller/orders', label: 'Orders', icon: Package },
-        ];
       case 'customer':
         return [
           { href: '/cart', label: 'Cart', icon: ShoppingCart },

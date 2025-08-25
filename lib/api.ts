@@ -9,8 +9,6 @@ import {
   Order,
   LoginRequest,
   RegisterRequest,
-  ProductRequest,
-  OrderStatusRequest,
   SearchFilters
 } from './types';
 
@@ -21,6 +19,7 @@ class ApiClient {
     this.client = axios.create({
       baseURL: process.env.NEXT_PUBLIC_API_URL,
       withCredentials: false, // Don't use cookies for JWT
+      timeout: 30000, // 30 second timeout
       headers: {
         'Content-Type': 'application/json',
       },
@@ -79,7 +78,7 @@ class ApiClient {
     try {
       const response: AxiosResponse<ApiResponse<T>> = await this.client(config);
       console.log("response", response);
-      console.log("response.data", response.data);
+      
       return response.data;
     } catch (error: any) {
       return {
@@ -158,23 +157,39 @@ class ApiClient {
   // Product APIs
   async getProducts(
     page: number = 1,
-    limit: number = 12,
+    limit: number = 10,
     filters?: SearchFilters
   ): Promise<ApiResponse<PaginatedResponse<Product>>> {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-      ...(filters?.category && { category: filters.category }),
-      ...(filters?.minPrice && { minPrice: filters.minPrice.toString() }),
-      ...(filters?.maxPrice && { maxPrice: filters.maxPrice.toString() }),
-      ...(filters?.rating && { rating: filters.rating.toString() }),
-      ...(filters?.inStock && { inStock: filters.inStock.toString() }),
-    });
+    try {
+      if (filters && Object.values(filters).some(value => 
+        value !== '' && value !== undefined && value !== false
+      )) {
+        // Use the new filtered search endpoint
+        const response = await this.request<PaginatedResponse<Product>>({
+          method: 'POST',
+          url: `/products/search/filters?page=${page - 1}&size=${limit}`,
+          data: filters,
+        });
+        return response;
+      } else {
+        // Use the simple products endpoint for no filters
+        const params = new URLSearchParams({
+          page: (page - 1).toString(),
+          limit: limit.toString(),
+        });
 
-    return this.request({
-      method: 'GET',
-      url: `/products?${params.toString()}`,
-    });
+        return this.request({
+          method: 'GET',
+          url: `/products?${params.toString()}`,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      return {
+        success: false,
+        error: 'Failed to fetch products',
+      };
+    }
   }
 
   async getProduct(id: string): Promise<ApiResponse<Product>> {
@@ -208,23 +223,36 @@ class ApiClient {
   }
 
   // Category APIs
+  // Category APIs
   async getCategories(): Promise<ApiResponse<Category[]>> {
     try {
-      // First try the simple endpoint
+      console.log('Fetching categories from /categories/simple');
       const response = await this.request<Category[]>({
         method: 'GET',
         url: '/categories/simple',
       });
       
-      if (response.success) {
-        return response;
+      if (response.success && response.data) {
+        console.log(`Successfully fetched ${response.data.length} categories`);
+        // Validate that we have proper Category objects
+        const validCategories = response.data.filter(cat => 
+          cat && typeof cat === 'object' && 
+          typeof cat.id === 'string' && 
+          typeof cat.name === 'string'
+        );
+        
+        if (validCategories.length !== response.data.length) {
+          console.warn(`Filtered out ${response.data.length - validCategories.length} invalid categories`);
+        }
+        
+        return {
+          success: true,
+          data: validCategories,
+          message: `Successfully fetched ${validCategories.length} categories`
+        };
       }
       
-      // Fallback to the original endpoint
-      return this.request<Category[]>({
-        method: 'GET',
-        url: '/categories',
-      });
+      return response;
     } catch (error) {
       console.error('Error fetching categories:', error);
       return {
@@ -312,29 +340,7 @@ class ApiClient {
     });
   }
 
-  // User APIs (Admin only)
-  async getUsers(page: number = 1, limit: number = 10): Promise<ApiResponse<PaginatedResponse<User>>> {
-    return this.request({
-      method: 'GET',
-      url: `/users?page=${page}&limit=${limit}`,
-    });
-  }
-
-  async blockUser(id: string): Promise<ApiResponse<User>> {
-    return this.request({
-      method: 'PUT',
-      url: `/users/${id}/block`,
-      data: { blocked: true },
-    });
-  }
-
-  async unblockUser(id: string): Promise<ApiResponse<User>> {
-    return this.request({
-      method: 'PUT',
-      url: `/users/${id}/block`,
-      data: { blocked: false },
-    });
-  }
+  
 
   // Get current user
   async getCurrentUser(): Promise<ApiResponse<User>> {
