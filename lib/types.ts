@@ -24,7 +24,7 @@ export interface Product {
   dimensions?: string;
   images: string[];
   category: Category;
-  seller: User;
+  sellerName: string;
   stockQuantity: number;
   minStockLevel?: number;
   maxStockLevel?: number;

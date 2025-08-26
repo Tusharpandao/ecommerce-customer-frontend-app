@@ -7,8 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 // Role-based route configurations
 const ROLE_ROUTES = {
-  admin: ['/admin'],
-  seller: ['/seller'],
+  
   customer: ['/cart', '/checkout', '/orders'],
 };
 
@@ -53,15 +52,7 @@ export async function middleware(request: NextRequest) {
       return response;
     }
 
-    // Check role-based access for admin routes
-    if (pathname.startsWith('/admin') && userRole !== 'admin') {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-
-    // Check role-based access for seller routes
-    if (pathname.startsWith('/seller') && userRole !== 'seller') {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
+    
 
     // Check role-based access for customer routes
     if (ROLE_ROUTES.customer.some(route => pathname.startsWith(route)) && userRole !== 'customer') {
